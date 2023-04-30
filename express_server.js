@@ -39,7 +39,11 @@ app.get("/u/:id", (req, res) => { // get request following redirect from POST
    const longURL = urlDatabase[req.params.id];
   res.redirect(longURL); // redirect to long url of the short url
 });
-
+app.post("/urls/:id/delete", (req, res) => {
+  console.log(req.body); // Log the POST request body to the console  
+ delete urlDatabase[req.params.id]; //delete from the DB
+  res.redirect("/urls"); // Redirect to index page
+});
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
