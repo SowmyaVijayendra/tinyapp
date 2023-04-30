@@ -18,9 +18,10 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
+
+    <% if(!username) {%>
     <form id="loginForm" class="form-inline" action="/login" method="POST">
-      <div class="form-group mb-2">   
-        <% if(!username) {%>   
+      <div class="form-group mb-2">
         <input
           class="form-control"
           type="text"
@@ -29,14 +30,18 @@
           style="width: 300px; margin: 0.5em"
         />
         <button type="submit" class="btn btn-outline-dark">Login</button>
-        <% } else { %>
-          <div id="loggedUsernameSection" class="form-group mb-2">
-            <label >Logged in as : </label>
-            <label style="margin: 0.5em" > <%= username %></label>
-          </div>
-        <% } %>
       </div>
     </form>
-    
+    <% } else { %>
+    <div id="loggedUsernameSection" class="form-group mb-2">
+      <label>Logged in as : </label>
+      <label style="margin: 0.5em"> <%= username %></label>
+    </div>
+    <form id="logoutForm" class="form-inline" action="/logout" method="POST">
+      <div class="form-group mb-2">        
+        <button type="submit" class="btn btn-dark">Logout</button>
+      </div>
+    </form>
+    <% } %>
   </nav>
 </header>
