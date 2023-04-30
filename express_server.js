@@ -54,6 +54,10 @@ app.post("/urls/:id", (req, res) => {
   urlDatabase[req.params.id] = req.body.newLongURL;
   res.redirect("/urls"); // Redirect to index page
 });
+app.post("/login", (req, res) => {
+  res.cookie("username", req.body.username);
+  res.redirect("/urls"); // Redirect to index page
+});
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
