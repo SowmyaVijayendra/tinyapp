@@ -44,6 +44,16 @@ app.post("/urls/:id/delete", (req, res) => {
  delete urlDatabase[req.params.id]; //delete from the DB
   res.redirect("/urls"); // Redirect to index page
 });
+app.post("/urls/:id/edit", (req, res) => {
+  console.log(req.body); // Log the POST request body to the console  
+  res.redirect(`/urls/${req.params.id}`); // Redirect to show page
+});
+app.post("/urls/:id", (req, res) => {
+  console.log(req.body); // Log the POST request body to the console 
+  console.log(req.params.id) ;
+  urlDatabase[req.params.id] = req.body.newLongURL;
+  res.redirect("/urls"); // Redirect to index page
+});
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
