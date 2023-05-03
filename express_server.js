@@ -82,6 +82,10 @@ app.get("/register", (req, res) => { // get request for registering
   res.render("urls_register");
 });
 app.post("/register" ,(req,res) => { //handler for register
+ if(!req.body.email || !req.body.password || getUserByEmail(req.body.email)){// if either or both email aor pawd is empty, return 400 status
+res.statusMessage= "Username or Password is empty";
+res.status(400).end();
+ } 
  let user = {};
  user["id"] = generateRandomString();
  user["email"] = req.body.email;
@@ -101,4 +105,13 @@ function generateRandomString() {
   let chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
   return result;
+}
+function getUserByEmail(email){
+  for(let user in users){
+    if(users[user]["email"] === email){
+      console.log(user);
+      return user;
+    }
+     
+  }
 }
