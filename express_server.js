@@ -11,6 +11,18 @@ const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur",
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
+};
 //to handle home page by returning a text
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -20,16 +32,16 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 app.get("/urls/new", (req, res) => {
-  const templateVars = {  username: req.cookies["username"]};
+  const templateVars = {  user : users[req.cookies["user_id"]]};
   res.render("urls_new", templateVars);
 });
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { username: req.cookies["username"], id: req.params.id, longURL: urlDatabase.id };
+  const templateVars = {  user : users[req.cookies["user_id"]], id: req.params.id, longURL: urlDatabase.id };
   res.render("urls_show", templateVars);
 });
 app.get("/urls",(req,res) => {
   console.log(req.cookies["username"]);
-  const templateVars = {  username: req.cookies["username"], urls: urlDatabase };
+  const templateVars = {   user : users[req.cookies["user_id"]], urls: urlDatabase };
   res.render("urls_index", templateVars);
 })
 app.post("/urls", (req, res) => {
@@ -69,6 +81,16 @@ app.post("/logout", (req, res) => {
 app.get("/register", (req, res) => { // get request for registering
   res.render("urls_register");
 });
+app.post("/register" ,(req,res) => { //handler for register
+ let user = {};
+ user["id"] = generateRandomString();
+ user["email"] = req.body.email;
+ user["password"] = req.body.password;
+ users[user["id"]]= user;
+ console.log(users);
+ res.cookie("user_id",user["id"]);
+ res.redirect("/urls"); // Redirect to index page
+})
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });

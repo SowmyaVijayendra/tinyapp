@@ -19,7 +19,7 @@
       </div>
     </div>
 
-    <% if(!username) {%>
+    <% if(!user) {%>
     <form id="loginForm" class="form-inline" action="/login" method="POST">
       <div class="form-group mb-2">
         <input
@@ -35,7 +35,7 @@
     <% } else { %>
     <div id="loggedUsernameSection" class="form-group mb-2">
       <label>Logged in as : </label>
-      <label style="margin: 0.5em"> <%= username %></label>
+      <label style="margin: 0.5em"> <%= user["email"] %></label>
     </div>
     <form id="logoutForm" class="form-inline" action="/logout" method="POST">
       <div class="form-group mb-2">        
