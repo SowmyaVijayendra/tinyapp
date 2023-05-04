@@ -19,19 +19,13 @@
       </div>
     </div>
 
-    <% if(!user) {%>
-    <form id="loginForm" class="form-inline" action="/login" method="POST">
-      <div class="form-group mb-2">
-        <input
-          class="form-control"
-          type="text"
-          name="username"
-          placeholder="Username"
-          style="width: 300px; margin: 0.5em"
-        />
-        <button type="submit" class="btn btn-outline-dark">Login</button>
+    <% if(!user) {%>   
+    <div class="collapse navbar-collapse" id="navbarNavAltMarkup"></div>
+      <div class="navbar-nav">
+        <a class="nav-item nav-link" href="/login">Login</a>
+        <a class="nav-item nav-link" href="/register">Register</a>
       </div>
-    </form>
+    </div>   
     <% } else { %>
     <div id="loggedUsernameSection" class="form-group mb-2">
       <label>Logged in as : </label>
