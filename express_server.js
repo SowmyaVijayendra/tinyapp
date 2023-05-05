@@ -25,8 +25,13 @@ const users = {
 };
 //to display new urls page
 app.get("/urls/new", (req, res) => {
-  const templateVars = { user: users[req.cookies["user_id"]] };
-  res.render("urls_new", templateVars);
+  if(req.cookies["user_id"]){ //if user is already logged in, redirect to urls/new page
+    const templateVars = { user: users[req.cookies["user_id"]] };
+    res.render("urls_new", templateVars);
+ }
+ else{ //if not logged in, redirect to login page
+  res.redirect("/login"); // Redirect to login page
+ }
 });
 //to display specific url page
 app.get("/urls/:id", (req, res) => {
@@ -46,17 +51,27 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 //post handler when redirected to urls page
-app.post("/urls", (req, res) => {
-  console.log(req.body); // Log the POST request body to the console
-  const shortUrl = generateRandomString(); // generate a random string for short url
-  urlDatabase[shortUrl] = req.body.longURL;
-  res.redirect(`/u/${shortUrl}`); // Redirect to shorturl generated
+app.post("/urls", (req, res) => {//if user is logged in, save new short url to DB
+  if(req.cookies["user_id"]){
+    const shortUrl = generateRandomString(); // generate a random string for short url
+    urlDatabase[shortUrl] = req.body.longURL;
+    res.redirect(`/u/${shortUrl}`); // Redirect to shorturl generated
+  }else{
+    const templateVars = {message: "Please login to create tiny URLs"};
+    res.render("urls_error", templateVars);
+  }  
 });
 
 app.get("/u/:id", (req, res) => {
-  // get request following redirect from POST
-  const longURL = urlDatabase[req.params.id];
-  res.redirect(longURL); // redirect to long url of the short url
+  // get request following redirect from POST  
+  if(urlDatabase.hasOwnProperty(req.params.id)){//if shortened url exists
+    const longURL = urlDatabase[req.params.id];
+    res.redirect(longURL); // redirect to long url of the short url
+  }else{
+    const templateVars = {message: `${req.params.id} does not exist in the Database`};
+    res.render("urls_error", templateVars);
+  }
+ 
 });
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id]; //delete from the DB
@@ -75,8 +90,13 @@ app.post("/logout", (req, res) => {
   res.redirect("/login"); // Redirect to index page
 });
 app.get("/register", (req, res) => {
+  if(req.cookies["user_id"]){ //if user is already logged in, redirect to urls page
+    res.redirect("/urls"); // Redirect to index page
+ }
+ else{
   // get request for registering
   res.render("urls_register");
+ }
 });
 app.post("/register", (req, res) => {
   //handler for register
@@ -101,8 +121,13 @@ app.post("/register", (req, res) => {
   res.redirect("/urls"); // Redirect to index page
 });
 app.get("/login", (req, res) => {
-  // get request for login page
+  if(req.cookies["user_id"]){ //if user is already logged in, redirect to urls page
+     res.redirect("/urls"); // Redirect to index page
+  }
+  else{
+// get request for login page
   res.render("urls_login");
+  }
 });
 app.post("/login", (req, res) => {
   //handler for login
