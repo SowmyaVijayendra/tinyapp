@@ -8,19 +8,34 @@ app.use(express.urlencoded({ extended: true })); //body-parser library - convert
 app.use(cookieParser()); //Cookie -parser
 
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW"
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW"
+  },
+  t6S7cQ: {
+    longURL: "https://www.amazon.ca",
+    userID: "userRandomID"
+  },
 };
 const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur",
+    password: "xyz",
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
     password: "dishwasher-funk",
+  },
+  user3RandomID: {
+    id: "aJ48lW",
+    email: "user3@example.com",
+    password: "abc",
   },
 };
 //to display new urls page
@@ -35,26 +50,50 @@ app.get("/urls/new", (req, res) => {
 });
 //to display specific url page
 app.get("/urls/:id", (req, res) => {
-  const templateVars = {
-    user: users[req.cookies["user_id"]],
-    id: req.params.id,
-    longURL: urlDatabase.id,
-  };
-  res.render("urls_show", templateVars);
+  if(req.cookies["user_id"]){// display only if logged in
+    if(!urlDatabase.hasOwnProperty(req.params.id)){
+      const templateVars = {message:`Sorry, Requested url ${req.params.id} does not exist.`};
+      res.render("urls_error", templateVars);
+      return;
+    }
+    if(urlDatabase[req.params.id]["userID"] === req.cookies["user_id"]){
+      const templateVars = {
+        user: users[req.cookies["user_id"]],
+        id: req.params.id,
+        longURL: urlDatabase[req.params.id].longURL,
+      };
+      res.render("urls_show", templateVars);
+    }else{
+      const templateVars = {message:`You are not authorised to view ${req.params.id}`};
+      res.render("urls_error", templateVars);
+    } 
+  }
+  else{
+    const templateVars = {message:"Please login or register."};
+    res.render("urls_error", templateVars);
+  }
 });
 //to display list of all urls
 app.get("/urls", (req, res) => {
-  const templateVars = {
-    user: users[req.cookies["user_id"]],
-    urls: urlDatabase,
-  };
-  res.render("urls_index", templateVars);
+  if(req.cookies["user_id"]){
+    let urlsByUser = urlsForUser(req.cookies["user_id"]);
+    const templateVars = {
+      user: users[req.cookies["user_id"]],
+      urls: urlsByUser,
+    };
+    res.render("urls_index", templateVars);
+  }else{
+    const templateVars = {message:"Please login or register."};
+    res.render("urls_error", templateVars);
+  }
+  
 });
 //post handler when redirected to urls page
 app.post("/urls", (req, res) => {//if user is logged in, save new short url to DB
   if(req.cookies["user_id"]){
     const shortUrl = generateRandomString(); // generate a random string for short url
-    urlDatabase[shortUrl] = req.body.longURL;
+    urlDatabase[shortUrl] ={};   
+    urlDatabase[shortUrl]["longURL"]=req.body.longURL;
     res.redirect(`/u/${shortUrl}`); // Redirect to shorturl generated
   }else{
     const templateVars = {message: "Please login to create tiny URLs"};
@@ -65,7 +104,7 @@ app.post("/urls", (req, res) => {//if user is logged in, save new short url to D
 app.get("/u/:id", (req, res) => {
   // get request following redirect from POST  
   if(urlDatabase.hasOwnProperty(req.params.id)){//if shortened url exists
-    const longURL = urlDatabase[req.params.id];
+    const longURL = urlDatabase[req.params.id].longURL;
     res.redirect(longURL); // redirect to long url of the short url
   }else{
     const templateVars = {message: `${req.params.id} does not exist in the Database`};
@@ -74,11 +113,46 @@ app.get("/u/:id", (req, res) => {
  
 });
 app.post("/urls/:id/delete", (req, res) => {
-  delete urlDatabase[req.params.id]; //delete from the DB
-  res.redirect("/urls"); // Redirect to index page
+  if(req.cookies["user_id"]){// display only if logged in
+    if(!urlDatabase.hasOwnProperty(req.params.id)){
+      const templateVars = {message:`Sorry, Requested url ${req.params.id} does not exist.`};
+      res.render("urls_error", templateVars);
+      return;
+    }
+    if(urlDatabase[req.params.id]["userID"] === req.cookies["user_id"]){// delete only user owns the url
+      delete urlDatabase[req.params.id]; //delete from the DB
+      res.redirect("/urls"); // Redirect to index page
+    }
+    else{
+      const templateVars = {message:`You are not authorised to delete ${req.params.id}`};
+      res.render("urls_error", templateVars);
+    }   
+  }
+  else{
+    const templateVars = {message:"Please login or register."};
+    res.render("urls_error", templateVars);
+  }
+  
 });
 app.post("/urls/:id/edit", (req, res) => {
-  res.redirect(`/urls/${req.params.id}`); // Redirect to show page
+  if(req.cookies["user_id"]){// display only if logged in
+    if(!urlDatabase.hasOwnProperty(req.params.id)){
+      const templateVars = {message:`Sorry, Requested url ${req.params.id} does not exist.`};
+      res.render("urls_error", templateVars);
+      return;
+    }
+    if(urlDatabase[req.params.id]["userID"] === req.cookies["user_id"]){// delete only user owns the url
+      res.redirect(`/urls/${req.params.id}`); // Redirect to show page
+    }
+    else{
+      const templateVars = {message:`You are not authorised to edit ${req.params.id}`};
+      res.render("urls_error", templateVars);
+    }   
+  }
+  else{
+    const templateVars = {message:"Please login or register."};
+    res.render("urls_error", templateVars);
+  }  
 });
 app.post("/urls/:id", (req, res) => {
   urlDatabase[req.params.id] = req.body.newLongURL;
@@ -148,7 +222,7 @@ app.post("/login", (req, res) => {
     res.status(403).end();
     return;
   }
-  res.cookie("user_id", user["id"]);
+  res.cookie("user_id", Object.keys(users).find(key => users[key] === user));
   res.redirect("/urls"); // Redirect to index page
 });
 app.listen(PORT, () => { 
@@ -166,9 +240,18 @@ function generateRandomString() {
 //To retrieve user object by email
 function getUserByEmail(email) {
   for (let user in users) {
-    if (users[user]["email"] === email) {
-      console.log(user);
+    if (users[user]["email"] === email) {     
       return users[user];
     }
   }
+}
+//retrieve urls created by specific user
+function urlsForUser(id){
+  let urls = {};
+  for(let url in urlDatabase){
+    if(urlDatabase[url]["userID"] === id){
+      urls[url] = urlDatabase[url];
+    }
+  }    
+  return urls;
 }
