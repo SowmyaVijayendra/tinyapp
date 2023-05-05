@@ -1,5 +1,6 @@
 const express = require("express");
 var cookieParser = require("cookie-parser");
+const bcrypt = require("bcryptjs"); // for hashing passwords
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -10,11 +11,11 @@ app.use(cookieParser()); //Cookie -parser
 const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
-    userID: "aJ48lW"
+    userID: "user3RandomID"
   },
   i3BoGr: {
     longURL: "https://www.google.ca",
-    userID: "aJ48lW"
+    userID: "user3RandomID"
   },
   t6S7cQ: {
     longURL: "https://www.amazon.ca",
@@ -25,17 +26,17 @@ const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "xyz",
+    password: bcrypt.hashSync("xyz", 10),
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk",
+    password: bcrypt.hashSync("pqr", 10),
   },
   user3RandomID: {
-    id: "aJ48lW",
+    id: "user3RandomID",
     email: "user3@example.com",
-    password: "abc",
+    password: bcrypt.hashSync("abc", 10),
   },
 };
 //to display new urls page
@@ -90,10 +91,11 @@ app.get("/urls", (req, res) => {
 });
 //post handler when redirected to urls page
 app.post("/urls", (req, res) => {//if user is logged in, save new short url to DB
-  if(req.cookies["user_id"]){
+  if(req.cookies["user_id"]){    
     const shortUrl = generateRandomString(); // generate a random string for short url
     urlDatabase[shortUrl] ={};   
     urlDatabase[shortUrl]["longURL"]=req.body.longURL;
+    urlDatabase[shortUrl]["userID"]=req.cookies["user_id"];   
     res.redirect(`/u/${shortUrl}`); // Redirect to shorturl generated
   }else{
     const templateVars = {message: "Please login to create tiny URLs"};
@@ -141,7 +143,7 @@ app.post("/urls/:id/edit", (req, res) => {
       res.render("urls_error", templateVars);
       return;
     }
-    if(urlDatabase[req.params.id]["userID"] === req.cookies["user_id"]){// delete only user owns the url
+    if(urlDatabase[req.params.id]["userID"] === req.cookies["user_id"]){// edit only user owns the url
       res.redirect(`/urls/${req.params.id}`); // Redirect to show page
     }
     else{
@@ -155,7 +157,7 @@ app.post("/urls/:id/edit", (req, res) => {
   }  
 });
 app.post("/urls/:id", (req, res) => {
-  urlDatabase[req.params.id] = req.body.newLongURL;
+  urlDatabase[req.params.id]["longURL"] = req.body.newLongURL;
   res.redirect("/urls"); // Redirect to index page
 });
 
@@ -188,9 +190,8 @@ app.post("/register", (req, res) => {
   let user = {};
   user["id"] = generateRandomString();
   user["email"] = req.body.email;
-  user["password"] = req.body.password;
-  users[user["id"]] = user;
-  console.log(users);
+  user["password"] = bcrypt.hashSync(req.body.password, 10); 
+  users[user["id"]] = user; 
   res.cookie("user_id", user["id"]);
   res.redirect("/urls"); // Redirect to index page
 });
@@ -217,7 +218,7 @@ app.post("/login", (req, res) => {
     res.status(403).end();
     return;
   }
-  if (user.password !== req.body.password) {
+  if(!bcrypt.compareSync(req.body.password, user.password)){   
     res.statusMessage = "Wrong password";
     res.status(403).end();
     return;
