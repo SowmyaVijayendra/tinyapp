@@ -1,6 +1,7 @@
 const express = require("express");
 var cookieSession = require('cookie-session');//middle ware
 const bcrypt = require("bcryptjs"); // for hashing passwords
+const {getUserByEmail} = require("./helpers");
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -184,7 +185,7 @@ app.post("/register", (req, res) => {
     res.statusMessage = "Username or Password is empty";
     res.status(400).end();
     return;
-  } else if (getUserByEmail(req.body.email)) {
+  } else if (getUserByEmail(req.body.email, users)) {
     //if username already exists in the DB, return 400 error status
     res.statusMessage = "Username already exists";
     res.status(400).end();
@@ -214,7 +215,7 @@ app.post("/login", (req, res) => {
     res.statusMessage = "Username or Password is empty";
     res.status(400).end();
   }
-  let user = getUserByEmail(req.body.email);
+  let user = getUserByEmail(req.body.email, users);
   if (!user) {
     //if user is not found in DB, return 403
     res.statusMessage = "User not found!";
@@ -241,14 +242,7 @@ function generateRandomString() {
     result += chars[Math.floor(Math.random() * chars.length)];
   return result;
 }
-//To retrieve user object by email
-function getUserByEmail(email) {
-  for (let user in users) {
-    if (users[user]["email"] === email) {     
-      return users[user];
-    }
-  }
-}
+
 //retrieve urls created by specific user
 function urlsForUser(id){
   let urls = {};
