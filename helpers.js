@@ -2,11 +2,11 @@
 function getUserByEmail(email, database) {
   let objUser;
   for (let user in database) {
-    if (database[user]["email"] === email) {     
+    if (database[user]["email"] === email) {
       objUser = database[user];
     }
   }
   return objUser;
 }
 
-module.exports= {getUserByEmail};
+module.exports = { getUserByEmail };
