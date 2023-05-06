@@ -1,12 +1,15 @@
 const express = require("express");
-var cookieParser = require("cookie-parser");
+var cookieSession = require('cookie-session');//middle ware
 const bcrypt = require("bcryptjs"); // for hashing passwords
 const app = express();
 const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs"); // Set EJS as the view engine
 app.use(express.urlencoded({ extended: true })); //body-parser library - converts request body from a buffer to string
-app.use(cookieParser()); //Cookie -parser
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2'], 
+}));
 
 const urlDatabase = {
   b6UTxQ: {
@@ -41,8 +44,8 @@ const users = {
 };
 //to display new urls page
 app.get("/urls/new", (req, res) => {
-  if(req.cookies["user_id"]){ //if user is already logged in, redirect to urls/new page
-    const templateVars = { user: users[req.cookies["user_id"]] };
+  if(req.session.user_id){ //if user is already logged in, redirect to urls/new page
+    const templateVars = { user: users[req.session.user_id] };
     res.render("urls_new", templateVars);
  }
  else{ //if not logged in, redirect to login page
@@ -51,15 +54,15 @@ app.get("/urls/new", (req, res) => {
 });
 //to display specific url page
 app.get("/urls/:id", (req, res) => {
-  if(req.cookies["user_id"]){// display only if logged in
+  if(req.session.user_id){// display only if logged in
     if(!urlDatabase.hasOwnProperty(req.params.id)){
       const templateVars = {message:`Sorry, Requested url ${req.params.id} does not exist.`};
       res.render("urls_error", templateVars);
       return;
     }
-    if(urlDatabase[req.params.id]["userID"] === req.cookies["user_id"]){
+    if(urlDatabase[req.params.id]["userID"] === req.session.user_id){
       const templateVars = {
-        user: users[req.cookies["user_id"]],
+        user: users[req.session.user_id],
         id: req.params.id,
         longURL: urlDatabase[req.params.id].longURL,
       };
@@ -76,10 +79,10 @@ app.get("/urls/:id", (req, res) => {
 });
 //to display list of all urls
 app.get("/urls", (req, res) => {
-  if(req.cookies["user_id"]){
-    let urlsByUser = urlsForUser(req.cookies["user_id"]);
+  if(req.session.user_id){
+    let urlsByUser = urlsForUser(req.session.user_id);
     const templateVars = {
-      user: users[req.cookies["user_id"]],
+      user: users[req.session.user_id],
       urls: urlsByUser,
     };
     res.render("urls_index", templateVars);
@@ -91,11 +94,11 @@ app.get("/urls", (req, res) => {
 });
 //post handler when redirected to urls page
 app.post("/urls", (req, res) => {//if user is logged in, save new short url to DB
-  if(req.cookies["user_id"]){    
+  if(req.session.user_id){    
     const shortUrl = generateRandomString(); // generate a random string for short url
     urlDatabase[shortUrl] ={};   
     urlDatabase[shortUrl]["longURL"]=req.body.longURL;
-    urlDatabase[shortUrl]["userID"]=req.cookies["user_id"];   
+    urlDatabase[shortUrl]["userID"]=req.session.user_id;   
     res.redirect(`/u/${shortUrl}`); // Redirect to shorturl generated
   }else{
     const templateVars = {message: "Please login to create tiny URLs"};
@@ -115,13 +118,13 @@ app.get("/u/:id", (req, res) => {
  
 });
 app.post("/urls/:id/delete", (req, res) => {
-  if(req.cookies["user_id"]){// display only if logged in
+  if(req.session.user_id){// display only if logged in
     if(!urlDatabase.hasOwnProperty(req.params.id)){
       const templateVars = {message:`Sorry, Requested url ${req.params.id} does not exist.`};
       res.render("urls_error", templateVars);
       return;
     }
-    if(urlDatabase[req.params.id]["userID"] === req.cookies["user_id"]){// delete only user owns the url
+    if(urlDatabase[req.params.id]["userID"] === req.session.user_id){// delete only user owns the url
       delete urlDatabase[req.params.id]; //delete from the DB
       res.redirect("/urls"); // Redirect to index page
     }
@@ -137,13 +140,13 @@ app.post("/urls/:id/delete", (req, res) => {
   
 });
 app.post("/urls/:id/edit", (req, res) => {
-  if(req.cookies["user_id"]){// display only if logged in
+  if(req.session.user_id){// display only if logged in
     if(!urlDatabase.hasOwnProperty(req.params.id)){
       const templateVars = {message:`Sorry, Requested url ${req.params.id} does not exist.`};
       res.render("urls_error", templateVars);
       return;
     }
-    if(urlDatabase[req.params.id]["userID"] === req.cookies["user_id"]){// edit only user owns the url
+    if(urlDatabase[req.params.id]["userID"] === req.session.user_id){// edit only user owns the url
       res.redirect(`/urls/${req.params.id}`); // Redirect to show page
     }
     else{
@@ -162,11 +165,11 @@ app.post("/urls/:id", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect("/login"); // Redirect to index page
 });
 app.get("/register", (req, res) => {
-  if(req.cookies["user_id"]){ //if user is already logged in, redirect to urls page
+  if(req.session.user_id){ //if user is already logged in, redirect to urls page
     res.redirect("/urls"); // Redirect to index page
  }
  else{
@@ -191,12 +194,12 @@ app.post("/register", (req, res) => {
   user["id"] = generateRandomString();
   user["email"] = req.body.email;
   user["password"] = bcrypt.hashSync(req.body.password, 10); 
-  users[user["id"]] = user; 
-  res.cookie("user_id", user["id"]);
+  users[user["id"]] = user;  
+  req.session.user_id = user["id"];
   res.redirect("/urls"); // Redirect to index page
 });
 app.get("/login", (req, res) => {
-  if(req.cookies["user_id"]){ //if user is already logged in, redirect to urls page
+  if(req.session.user_id){ //if user is already logged in, redirect to urls page
      res.redirect("/urls"); // Redirect to index page
   }
   else{
@@ -222,8 +225,8 @@ app.post("/login", (req, res) => {
     res.statusMessage = "Wrong password";
     res.status(403).end();
     return;
-  }
-  res.cookie("user_id", Object.keys(users).find(key => users[key] === user));
+  }  
+  req.session.user_id = Object.keys(users).find(key => users[key] === user);
   res.redirect("/urls"); // Redirect to index page
 });
 app.listen(PORT, () => { 
