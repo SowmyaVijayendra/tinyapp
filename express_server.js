@@ -2,6 +2,7 @@ const express = require("express"); //express library
 var cookieSession = require("cookie-session"); //middle ware
 const bcrypt = require("bcryptjs"); // for hashing passwords
 const { getUserByEmail, generateRandomString, urlsForUser } = require("./helpers"); //helper functions
+const { urlDatabase, users } = require("./database"); //database
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -14,39 +15,7 @@ app.use(
     keys: ["key1", "key2"],
   })
 );
-//database for storing URLs
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "user3RandomID",
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "user3RandomID",
-  },
-  t6S7cQ: {
-    longURL: "https://www.amazon.ca",
-    userID: "userRandomID",
-  },
-};
-//Database for storing Users
-const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: bcrypt.hashSync("xyz", 10),
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: bcrypt.hashSync("pqr", 10),
-  },
-  user3RandomID: {
-    id: "user3RandomID",
-    email: "user3@example.com",
-    password: bcrypt.hashSync("abc", 10),
-  },
-};
+
 //landing page
 app.get("/", (req, res) => {
   if (req.session.user_id) {
@@ -145,8 +114,14 @@ app.get("/login", (req, res) => {
 //post handler when redirected to urls page
 app.post("/urls", (req, res) => {
   //if user is logged in, save new short url to DB
+  let shortUrl;
   if (req.session.user_id) {
-    const shortUrl = generateRandomString(); // generate a random string for short url
+    if(!req.body.longURL || (req.body.longURL).toString().trim().length === 0){
+      const templateVars = { message: "Please enter a valid URL" };
+      res.render("urls_error", templateVars);
+      return;
+    }
+    shortUrl = generateRandomString(); // generate a random string for short url
     urlDatabase[shortUrl] = {};
     urlDatabase[shortUrl]["longURL"] = req.body.longURL;
     urlDatabase[shortUrl]["userID"] = req.session.user_id;
@@ -208,6 +183,11 @@ app.post("/urls/:id/edit", (req, res) => {
   }
 });
 app.post("/urls/:id", (req, res) => {
+  if(!req.body.newLongURL || (req.body.newLongURL).toString().trim().length === 0){
+    const templateVars = { message: "Please enter a valid URL" };
+    res.render("urls_error", templateVars);
+    return;
+  }
   urlDatabase[req.params.id]["longURL"] = req.body.newLongURL;
   res.redirect("/urls"); // Redirect to index page
 });
