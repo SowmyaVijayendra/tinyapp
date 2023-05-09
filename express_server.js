@@ -1,7 +1,7 @@
 const express = require("express"); //express library
 var cookieSession = require("cookie-session"); //middle ware
 const bcrypt = require("bcryptjs"); // for hashing passwords
-const { getUserByEmail } = require("./helpers"); //helper functions
+const { getUserByEmail, generateRandomString, urlsForUser } = require("./helpers"); //helper functions
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -47,6 +47,16 @@ const users = {
     password: bcrypt.hashSync("abc", 10),
   },
 };
+//landing page
+app.get("/", (req, res) => {
+  if (req.session.user_id) {
+  //if user is already logged in, redirect to urls page
+    res.redirect("/urls"); // Redirect to index page
+  } else {
+    //if not logged in, redirect to login page
+    res.redirect("/login"); // Redirect to login page
+  }
+});
 //to display new urls page
 app.get("/urls/new", (req, res) => {
   if (req.session.user_id) {
@@ -90,7 +100,7 @@ app.get("/urls/:id", (req, res) => {
 //to display list of all urls
 app.get("/urls", (req, res) => {
   if (req.session.user_id) {
-    let urlsByUser = urlsForUser(req.session.user_id);
+    let urlsByUser = urlsForUser(req.session.user_id, urlDatabase);
     const templateVars = {
       user: users[req.session.user_id],
       urls: urlsByUser,
@@ -99,6 +109,37 @@ app.get("/urls", (req, res) => {
   } else {
     const templateVars = { message: "Please login or register." };
     res.render("urls_error", templateVars);
+  }
+});
+app.get("/u/:id", (req, res) => {
+  // get request following redirect from POST
+  if (urlDatabase.hasOwnProperty(req.params.id)) {
+    //if shortened url exists
+    const longURL = urlDatabase[req.params.id].longURL;
+    res.redirect(longURL); // redirect to long url of the short url
+  } else {
+    const templateVars = {
+      message: `${req.params.id} does not exist in the Database`,
+    };
+    res.render("urls_error", templateVars);
+  }
+});
+app.get("/register", (req, res) => {
+  if (req.session.user_id) {
+    //if user is already logged in, redirect to urls page
+    res.redirect("/urls"); // Redirect to index page
+  } else {
+    // get request for registering
+    res.render("urls_register");
+  }
+});
+app.get("/login", (req, res) => {
+  if (req.session.user_id) {
+    //if user is already logged in, redirect to urls page
+    res.redirect("/urls"); // Redirect to index page
+  } else {
+    // get request for login page
+    res.render("urls_login");
   }
 });
 //post handler when redirected to urls page
@@ -116,19 +157,7 @@ app.post("/urls", (req, res) => {
   }
 });
 
-app.get("/u/:id", (req, res) => {
-  // get request following redirect from POST
-  if (urlDatabase.hasOwnProperty(req.params.id)) {
-    //if shortened url exists
-    const longURL = urlDatabase[req.params.id].longURL;
-    res.redirect(longURL); // redirect to long url of the short url
-  } else {
-    const templateVars = {
-      message: `${req.params.id} does not exist in the Database`,
-    };
-    res.render("urls_error", templateVars);
-  }
-});
+
 app.post("/urls/:id/delete", (req, res) => {
   if (req.session.user_id) {
     // display only if logged in
@@ -187,15 +216,7 @@ app.post("/logout", (req, res) => {
   req.session = null;
   res.redirect("/login"); // Redirect to index page
 });
-app.get("/register", (req, res) => {
-  if (req.session.user_id) {
-    //if user is already logged in, redirect to urls page
-    res.redirect("/urls"); // Redirect to index page
-  } else {
-    // get request for registering
-    res.render("urls_register");
-  }
-});
+
 app.post("/register", (req, res) => {
   //handler for register
   if (!req.body.email || !req.body.password) {
@@ -217,15 +238,7 @@ app.post("/register", (req, res) => {
   req.session.user_id = user["id"];
   res.redirect("/urls"); // Redirect to index page
 });
-app.get("/login", (req, res) => {
-  if (req.session.user_id) {
-    //if user is already logged in, redirect to urls page
-    res.redirect("/urls"); // Redirect to index page
-  } else {
-    // get request for login page
-    res.render("urls_login");
-  }
-});
+
 app.post("/login", (req, res) => {
   //handler for login
   if (!req.body.email || !req.body.password) {
@@ -251,23 +264,6 @@ app.post("/login", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-//to generate random 6 character alphanumeric string
-function generateRandomString() {
-  let result = "";
-  let length = 6;
-  let chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  for (var i = length; i > 0; --i)
-    result += chars[Math.floor(Math.random() * chars.length)];
-  return result;
-}
 
-//retrieve urls created by specific user
-function urlsForUser(id) {
-  let urls = {};
-  for (let url in urlDatabase) {
-    if (urlDatabase[url]["userID"] === id) {
-      urls[url] = urlDatabase[url];
-    }
-  }
-  return urls;
-}
+
+
