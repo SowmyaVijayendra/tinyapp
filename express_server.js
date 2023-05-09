@@ -126,15 +126,13 @@ app.post("/urls", (req, res) => {
     shortUrl = generateRandomString(); // generate a random string for short url
     urlDatabase[shortUrl] = {};
     urlDatabase[shortUrl]["longURL"] = req.body.longURL;
-    urlDatabase[shortUrl]["userID"] = req.session.user_id;
+    urlDatabase[shortUrl]["userID"] = req.session.user_id;   
     res.redirect(`/u/${shortUrl}`); // Redirect to shorturl generated
   } else {
     const templateVars = { message: "Please login to create tiny URLs" };
     res.render("urls_error", templateVars);
   }
 });
-
-
 app.post("/urls/:id/delete", (req, res) => {
   if (req.session.user_id) {
     // display only if logged in
