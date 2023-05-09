@@ -98,8 +98,9 @@ app.get("/register", (req, res) => {
     //if user is already logged in, redirect to urls page
     res.redirect("/urls"); // Redirect to index page
   } else {
+    const templateVars = { user: users[req.session.user_id] };    
     // get request for registering
-    res.render("urls_register");
+    res.render("urls_register",templateVars);
   }
 });
 app.get("/login", (req, res) => {
@@ -107,8 +108,9 @@ app.get("/login", (req, res) => {
     //if user is already logged in, redirect to urls page
     res.redirect("/urls"); // Redirect to index page
   } else {
+    const templateVars = { user: users[req.session.user_id] }; 
     // get request for login page
-    res.render("urls_login");
+    res.render("urls_login", templateVars);
   }
 });
 //post handler when redirected to urls page
